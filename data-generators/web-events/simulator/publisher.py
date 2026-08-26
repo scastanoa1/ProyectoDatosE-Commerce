@@ -1,16 +1,9 @@
-"""Publisher abstraction.
-
-The simulator itself does not configure Google Cloud credentials because that
-integration is assigned to another team member. The rest of the project only depends
-on the publish(event) interface, so Pub/Sub can be added here without touching event
-or session generation.
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import json
 from pathlib import Path
+from typing import Any
 
 
 class Publisher(ABC):
@@ -57,18 +50,35 @@ class CompositePublisher(Publisher):
 
 
 class PubSubPublisher(Publisher):
-    """Integration point reserved for the teammate who connects Google Pub/Sub.
+    """Publish events once to a GCP Pub/Sub topic with routing attributes."""
 
-    Expected usage by the rest of the simulator:
+    def __init__(
+        self,
+        project_id: str,
+        topic_name: str,
+        publisher_client: Any | None = None,
+    ) -> None:
+        if publisher_client is None:
+            try:
+                from google.cloud import pubsub_v1
+            except ImportError as error:
+                raise RuntimeError(
+                    "Pub/Sub requires google-cloud-pubsub. "
+                    "Install it with: pip install -r requirements.txt"
+                ) from error
+            publisher_client = pubsub_v1.PublisherClient()
 
-        publisher.publish(event)
-
-    The implementation should serialize the event as UTF-8 JSON and publish it to the
-    configured GCP topic. No credentials, project IDs or topic IDs are hard-coded here.
-    """
+        self._publisher = publisher_client
+        self._topic_path = self._publisher.topic_path(project_id, topic_name)
 
     def publish(self, event: dict) -> None:
-        raise NotImplementedError(
-            "Pub/Sub connection intentionally left unimplemented. "
-            "Implement it in simulator/publisher.py without changing the generators."
-        )
+        targets = event["processing"]["targets"]
+        attributes = {
+            "batch": str("batch" in targets).lower(),
+            "streaming": str("streaming" in targets).lower(),
+        }
+        payload = json.dumps(event, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+        # Esperar el resultado deja visible un error de publicación al simulador,
+        # sin volver a publicar ni alterar el JSON original.
+        self._publisher.publish(self._topic_path, payload, **attributes).result()
