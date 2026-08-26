@@ -6,7 +6,12 @@ import time
 
 from simulator.data_catalog import DataCatalog
 from simulator.error_injector import ErrorInjector
-from simulator.publisher import CompositePublisher, ConsolePublisher, JsonlPublisher
+from simulator.publisher import (
+    CompositePublisher,
+    ConsolePublisher,
+    JsonlPublisher,
+    PubSubPublisher,
+)
 from simulator.session_generator import SessionGenerator
 
 
@@ -43,6 +48,14 @@ def parse_args() -> argparse.Namespace:
         help="Also print every generated event to stdout.",
     )
     parser.add_argument(
+        "--pubsub-project-id",
+        help="GCP project ID used to publish events to Pub/Sub.",
+    )
+    parser.add_argument(
+        "--pubsub-topic",
+        help="Pub/Sub topic name; requires --pubsub-project-id.",
+    )
+    parser.add_argument(
         "--no-sleep",
         action="store_true",
         help="Disable pacing (useful for local tests).",
@@ -63,6 +76,10 @@ def validate_args(args: argparse.Namespace) -> None:
         raise SystemExit("--rate must be greater than 0.")
     if not 0.0 <= args.error_rate <= 1.0:
         raise SystemExit("--error-rate must be between 0 and 1.")
+    if bool(args.pubsub_project_id) != bool(args.pubsub_topic):
+        raise SystemExit(
+            "--pubsub-project-id and --pubsub-topic must be provided together."
+        )
 
 
 def build_exact_stream(session_generator: SessionGenerator, total_events: int):
@@ -99,6 +116,8 @@ def main() -> None:
     publishers = [JsonlPublisher(args.output)]
     if args.console:
         publishers.append(ConsolePublisher())
+    if args.pubsub_project_id:
+        publishers.append(PubSubPublisher(args.pubsub_project_id, args.pubsub_topic))
     publisher = CompositePublisher(publishers)
 
     delay = 1.0 / args.rate
