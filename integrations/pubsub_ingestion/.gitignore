@@ -1,0 +1,8 @@
+.env
+output/*.json
+__pycache__/
+*.pyc
+output/*.jsonl
+!output/.gitkeep
+sample_data/*.jsonl
+!sample_data/.gitkeep
