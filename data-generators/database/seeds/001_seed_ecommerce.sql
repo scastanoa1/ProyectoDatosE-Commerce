@@ -142,7 +142,7 @@ SELECT
     gen_random_uuid(),
     u.user_id,
     CASE
-        WHEN gs % 2 = 0 THEN 'shipping'
+        WHEN x.gs = 0 THEN 'shipping'
         ELSE 'billing'
     END,
     (
@@ -204,6 +204,7 @@ VALUES
 
 
 -- Subcategorias
+
 INSERT INTO categories (
     category_id,
     name,
@@ -260,7 +261,8 @@ SELECT
     p.price,
     ROUND((p.price * p.cost_percentage)::numeric, 2),
     'active',
-    CURRENT_TIMESTAMP - (floor(random() * 365)::int || ' days')::interval,
+    CURRENT_TIMESTAMP
+        - (floor(random() * 365)::int || ' days')::interval,
     CURRENT_TIMESTAMP
 FROM (
     VALUES
@@ -408,103 +410,153 @@ SELECT DISTINCT
 FROM products p
 JOIN categories c
     ON (
-        (p.name IN (
-            'iPhone 15',
-            'Samsung Galaxy S24',
-            'Xiaomi Redmi Note 13'
-        ) AND c.name = 'Celulares')
+        (
+            p.name IN (
+                'iPhone 15',
+                'Samsung Galaxy S24',
+                'Xiaomi Redmi Note 13'
+            )
+            AND c.name = 'Celulares'
+        )
 
         OR
 
-        (p.name IN (
-            'MacBook Air M3',
-            'Dell Inspiron 15',
-            'Lenovo IdeaPad 3'
-        ) AND c.name = 'Computadores')
+        (
+            p.name IN (
+                'MacBook Air M3',
+                'Dell Inspiron 15',
+                'Lenovo IdeaPad 3'
+            )
+            AND c.name = 'Computadores'
+        )
 
         OR
 
-        (p.name IN (
-            'Sony WH-1000XM5',
-            'AirPods Pro 2',
-            'JBL Flip 6'
-        ) AND c.name = 'Audio')
+        (
+            p.name IN (
+                'Sony WH-1000XM5',
+                'AirPods Pro 2',
+                'JBL Flip 6'
+            )
+            AND c.name = 'Audio'
+        )
 
         OR
 
-        (p.name IN (
-            'Logitech MX Master 3S',
-            'Teclado Logitech K380',
-            'Monitor LG 27 pulgadas'
-        ) AND c.name = 'Accesorios')
+        (
+            p.name IN (
+                'Logitech MX Master 3S',
+                'Teclado Logitech K380',
+                'Monitor LG 27 pulgadas'
+            )
+            AND c.name = 'Accesorios'
+        )
 
         OR
 
-        (p.name IN (
-            'Camiseta Nike Sportswear'
-        ) AND c.name = 'Camisetas')
+        (
+            p.name IN (
+                'Camiseta Nike Sportswear'
+            )
+            AND c.name = 'Camisetas'
+        )
 
         OR
 
-        (p.name IN (
-            'Tenis Adidas Runfalcon'
-        ) AND c.name = 'Calzado')
+        (
+            p.name IN (
+                'Tenis Adidas Runfalcon'
+            )
+            AND c.name = 'Calzado'
+        )
 
         OR
 
-        (p.name IN (
-            'Chaqueta North Face',
-            'Jeans Levi Strauss'
-        ) AND c.name = 'Ropa')
+        (
+            p.name IN (
+                'Chaqueta North Face',
+                'Jeans Levi Strauss'
+            )
+            AND c.name = 'Ropa'
+        )
 
         OR
 
-        (p.name IN (
-            'Xbox Series X',
-            'PlayStation 5 Slim',
-            'Nintendo Switch OLED'
-        ) AND c.name = 'Consolas')
+        (
+            p.name IN (
+                'Xbox Series X',
+                'PlayStation 5 Slim',
+                'Nintendo Switch OLED'
+            )
+            AND c.name = 'Consolas'
+        )
 
         OR
 
-        (p.name IN (
-            'FIFA 26',
-            'Control Xbox Wireless'
-        ) AND c.name = 'Juegos')
+        (
+            p.name IN (
+                'FIFA 26',
+                'Control Xbox Wireless'
+            )
+            AND c.name = 'Juegos'
+        )
 
         OR
 
-        (p.name IN (
-            'Proteina Whey 2kg',
-            'Mat de Yoga'
-        ) AND c.name = 'Fitness')
+        (
+            p.name IN (
+                'Proteina Whey 2kg',
+                'Mat de Yoga'
+            )
+            AND c.name = 'Fitness'
+        )
 
         OR
 
-        (p.name IN (
-            'Balon Adidas Mundial'
-        ) AND c.name = 'Futbol')
+        (
+            p.name IN (
+                'Balon Adidas Mundial'
+            )
+            AND c.name = 'Futbol'
+        )
 
         OR
 
-        (p.name IN (
-            'Licuadora Oster',
-            'Cafetera Nespresso',
-            'Set de sartenes'
-        ) AND c.name = 'Cocina')
+        (
+            p.name IN (
+                'Licuadora Oster',
+                'Cafetera Nespresso',
+                'Set de sartenes'
+            )
+            AND c.name = 'Cocina'
+        )
 
         OR
 
-        (p.name IN (
-            'Sofa 3 puestos'
-        ) AND c.name = 'Muebles')
+        (
+            p.name IN (
+                'Sofa 3 puestos'
+            )
+            AND c.name = 'Muebles'
+        )
 
         OR
 
-        (p.name IN (
-            'Kit cuidado facial',
-            'Perfume Eros 100ml'
-        ) AND c.name = 'Cuidado facial')
+        (
+            p.name IN (
+                'Kit cuidado facial'
+            )
+            AND c.name = 'Cuidado facial'
+        )
+
+        OR
+
+        (
+            p.name IN (
+                'Perfume Eros 100ml'
+            )
+            AND c.name = 'Cuidado corporal'
+        )
     );
 
 
@@ -566,9 +618,9 @@ INSERT INTO orders (
 )
 SELECT
     gen_random_uuid(),
-    u.user_id,
-    a.address_id,
-    a.address_id,
+    data.user_id,
+    data.address_id,
+    data.address_id,
     status_data.status,
     0,
     0,
@@ -579,12 +631,12 @@ SELECT
     END,
     0,
     'COP',
-    order_date,
-    order_date
+    data.order_date,
+    data.order_date
 FROM (
     SELECT
         u.user_id,
-        (ARRAY_AGG(a.address_id))[1] AS address_id,
+        (ARRAY_AGG(a.address_id ORDER BY a.created_at))[1] AS address_id,
         gs,
         CURRENT_TIMESTAMP
             - (floor(random() * 180)::int || ' days')::interval
@@ -593,12 +645,10 @@ FROM (
     JOIN addresses a
         ON a.user_id = u.user_id
     CROSS JOIN generate_series(1, 5) gs
-    GROUP BY u.user_id
+    GROUP BY
+        u.user_id,
+        gs
 ) data
-JOIN users u
-    ON u.user_id = data.user_id
-JOIN addresses a
-    ON a.address_id = data.address_id
 CROSS JOIN LATERAL (
     SELECT
         CASE
@@ -631,13 +681,13 @@ INSERT INTO order_items (
 SELECT
     gen_random_uuid(),
     o.order_id,
-    pv.variant_id,
+    item.variant_id,
     item.quantity,
-    pv.price,
+    item.unit_price,
     item.discount_amount,
     item.tax_amount,
     (
-        item.quantity * pv.price
+        item.quantity * item.unit_price
         - item.discount_amount
         + item.tax_amount
     ),
@@ -646,12 +696,14 @@ FROM orders o
 CROSS JOIN LATERAL (
     SELECT
         pv.variant_id,
+        pv.price AS unit_price,
         floor(random() * 3 + 1)::int AS quantity,
         ROUND(
             (
                 pv.price
                 * CASE
-                    WHEN random() < 0.15 THEN random() * 0.15
+                    WHEN random() < 0.15
+                    THEN random() * 0.15
                     ELSE 0
                   END
             )::numeric,
@@ -667,9 +719,7 @@ CROSS JOIN LATERAL (
             ELSE 3
         END
     )
-) item
-JOIN product_variants pv
-    ON pv.variant_id = item.variant_id;
+) item;
 
 
 -- ============================================================
@@ -771,15 +821,25 @@ INSERT INTO carts (
 SELECT
     gen_random_uuid(),
     u.user_id,
-    CASE
-        WHEN random() < 0.30 THEN 'abandoned'
-        WHEN random() < 0.50 THEN 'converted'
-        WHEN random() < 0.85 THEN 'active'
-        ELSE 'expired'
-    END,
-    CURRENT_TIMESTAMP - (floor(random() * 90)::int || ' days')::interval,
-    CURRENT_TIMESTAMP - (floor(random() * 10)::int || ' days')::interval
+    cart_data.status,
+    cart_data.created_at,
+    cart_data.updated_at
 FROM users u
+CROSS JOIN LATERAL (
+    SELECT
+        CASE
+            WHEN random() < 0.30 THEN 'abandoned'
+            WHEN random() < 0.50 THEN 'converted'
+            WHEN random() < 0.85 THEN 'active'
+            ELSE 'expired'
+        END AS status,
+
+        CURRENT_TIMESTAMP
+            - (floor(random() * 90)::int || ' days')::interval AS created_at,
+
+        CURRENT_TIMESTAMP
+            - (floor(random() * 10)::int || ' days')::interval AS updated_at
+) cart_data
 CROSS JOIN generate_series(1, 2);
 
 
@@ -802,15 +862,35 @@ SELECT
     pv.variant_id,
     floor(random() * 3 + 1)::int,
     pv.price,
-    c.created_at + (floor(random() * 48)::int || ' hours')::interval,
+
+    -- El item siempre se agrega después de crear el carrito
+    -- y antes de la fecha de actualización.
+    c.created_at
+        + (
+            floor(
+                random()
+                * GREATEST(
+                    1,
+                    EXTRACT(
+                        EPOCH FROM (
+                            c.updated_at - c.created_at
+                        )
+                    ) / 3600
+                )
+            )::int || ' hours'
+        )::interval,
+
     CASE
         WHEN c.status IN ('abandoned', 'expired')
-            THEN c.updated_at
+        THEN c.updated_at
         ELSE NULL
     END
+
 FROM carts c
 CROSS JOIN LATERAL (
-    SELECT variant_id, price
+    SELECT
+        variant_id,
+        price
     FROM product_variants
     ORDER BY random()
     LIMIT (
@@ -845,7 +925,8 @@ SELECT
     review_data.rating,
     review_data.title,
     review_data.comment,
-    o.created_at + (floor(random() * 20)::int || ' days')::interval
+    o.created_at
+        + (floor(random() * 20)::int || ' days')::interval
 FROM orders o
 JOIN order_items oi
     ON oi.order_id = o.order_id
@@ -890,7 +971,6 @@ WHERE
 -- 15. CONSULTAS DE VALIDACION
 -- ============================================================
 
--- Cantidad de registros
 SELECT 'users' AS table_name, COUNT(*) AS records FROM users
 UNION ALL
 SELECT 'addresses', COUNT(*) FROM addresses
