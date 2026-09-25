@@ -4,6 +4,8 @@
 
 Este documento complementa la [documentación general de la estructura del evento](./estructura-evento.md) y detalla el contrato específico del campo `payload` para cada `event_type` manejado en la plataforma.
 
+> **Convención de IDs:** los campos `product_id`, `variant_id`, `category_id`, `cart_id` y `order_id` contienen los mismos UUID de las tablas correspondientes en PostgreSQL (`products`, `product_variants`, `categories`, `carts`, `orders`), para permitir el cruce directo entre eventos y datos transaccionales.
+
 
 ---
 
@@ -37,7 +39,7 @@ Se dispara cuando el usuario visita una categoría de productos.
 
 ```json
 {
-  "category_id": "cat_10"
+  "category_id": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
 }
 ```
 
@@ -49,14 +51,16 @@ Se dispara cuando el usuario visita la ficha de un producto.
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `product_id` | `string` | ID del producto visitado |
-| `category_id` | `string` | ID de la categoría a la que pertenece el producto |
+| `category_id` | `string` | ID de la categoría desde la que el usuario llegó al producto (contexto de navegación). `null` si llegó desde búsqueda, enlace directo u otra fuente sin categoría |
 
 ```json
 {
-  "product_id": "prod_123",
-  "category_id": "cat_10"
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
+  "category_id": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
 }
 ```
+
+> Un producto puede pertenecer a varias categorías (tabla `product_categories`). Este campo **no** representa todas sus categorías, solo el contexto de navegación; la relación completa producto–categorías se obtiene en Silver desde la base de datos.
 
 ### 1.4 `search`
 Se dispara cuando el usuario realiza una búsqueda con resultados.
@@ -109,7 +113,7 @@ Se dispara al agregar o quitar un producto de favoritos.
 **Agregar a favoritos:**
 ```json
 {
-  "product_id": "prod_123",
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
   "action": "add"
 }
 ```
@@ -117,7 +121,7 @@ Se dispara al agregar o quitar un producto de favoritos.
 **Quitar de favoritos:**
 ```json
 {
-  "product_id": "prod_123",
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
   "action": "remove"
 }
 ```
@@ -134,7 +138,7 @@ Se dispara cuando el usuario comparte un producto.
 
 ```json
 {
-  "product_id": "prod_123",
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
   "platform": "whatsapp"
 }
 ```
@@ -150,14 +154,18 @@ Se dispara al agregar un producto al carrito.
 
 | Campo | Tipo | Descripción |
 |---|---|---|
+| `cart_id` | `string` | ID del carrito (`carts.cart_id`) |
 | `product_id` | `string` | ID del producto agregado |
+| `variant_id` | `string` | ID de la variante agregada (`product_variants.variant_id`): color, talla, etc. |
 | `quantity` | `integer` | Cantidad agregada |
 | `unit_price` | `number` | Precio unitario en el momento del evento |
 | `currency` | `string` | Moneda (ISO 4217, ej. `COP`) |
 
 ```json
 {
-  "product_id": "prod_123",
+  "cart_id": "9b2e4f1a-3c5d-4e6f-8a7b-1c2d3e4f5a6b",
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
+  "variant_id": "a1b2c3d4-e5f6-4789-abcd-ef0123456789",
   "quantity": 2,
   "unit_price": 149.99,
   "currency": "COP"
@@ -171,12 +179,16 @@ Se dispara al quitar un producto (total o parcialmente) del carrito.
 
 | Campo | Tipo | Descripción |
 |---|---|---|
+| `cart_id` | `string` | ID del carrito (`carts.cart_id`) |
 | `product_id` | `string` | ID del producto removido |
+| `variant_id` | `string` | ID de la variante removida (`product_variants.variant_id`) |
 | `quantity` | `integer` | Cantidad removida |
 
 ```json
 {
-  "product_id": "prod_123",
+  "cart_id": "9b2e4f1a-3c5d-4e6f-8a7b-1c2d3e4f5a6b",
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
+  "variant_id": "a1b2c3d4-e5f6-4789-abcd-ef0123456789",
   "quantity": 1
 }
 ```
@@ -195,7 +207,7 @@ Se dispara cuando el usuario visualiza el contenido de su carrito.
 
 ```json
 {
-  "cart_id": "cart_456",
+  "cart_id": "9b2e4f1a-3c5d-4e6f-8a7b-1c2d3e4f5a6b",
   "items_count": 3,
   "total_amount": 429.97,
   "currency": "COP"
@@ -220,7 +232,7 @@ Se dispara cuando el usuario inicia el proceso de checkout.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "items_count": 3,
   "total_amount": 429.97,
   "currency": "COP"
@@ -241,7 +253,7 @@ Se dispara cuando el usuario selecciona el método de envío.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "shipping_method": "standard",
   "shipping_cost": 12000,
   "currency": "COP"
@@ -262,7 +274,7 @@ Se dispara cuando el usuario selecciona el método de pago.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "payment_method": "credit_card"
 }
 ```
@@ -281,7 +293,7 @@ Se dispara cuando el usuario abandona el checkout antes de completar la compra.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "step": "payment",
   "cart_value": 429.97,
   "currency": "COP"
@@ -306,22 +318,25 @@ Uno de los eventos más importantes del sistema: confirma que la compra se compl
 | `currency` | `string` | Moneda (ISO 4217) |
 | `items` | `array` | Lista de ítems comprados |
 | `items[].product_id` | `string` | ID del producto |
+| `items[].variant_id` | `string` | ID de la variante comprada (`product_variants.variant_id`); equivale a `order_items.variant_id` |
 | `items[].quantity` | `integer` | Cantidad comprada |
 | `items[].unit_price` | `number` | Precio unitario en el momento de la compra |
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "total_amount": 429.97,
   "currency": "COP",
   "items": [
     {
-      "product_id": "prod_123",
+      "product_id": "550e8400-e29b-41d4-a716-446655440000",
+      "variant_id": "a1b2c3d4-e5f6-4789-abcd-ef0123456789",
       "quantity": 2,
       "unit_price": 149.99
     },
     {
-      "product_id": "prod_789",
+      "product_id": "6fa459ea-ee8a-4ca4-894e-db77e160355e",
+      "variant_id": "b2c3d4e5-f6a7-4890-bcde-f01234567890",
       "quantity": 1,
       "unit_price": 129.99
     }
@@ -343,7 +358,7 @@ Se dispara cuando el pago de una orden se procesa exitosamente.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "payment_method": "credit_card",
   "amount": 429.97,
   "currency": "COP"
@@ -367,7 +382,7 @@ Se dispara cuando el pago de una orden falla.
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "payment_method": "credit_card",
   "amount": 429.97,
   "currency": "COP",
@@ -387,7 +402,7 @@ Se dispara cuando una orden es cancelada (por el cliente o por el sistema).
 
 ```json
 {
-  "order_id": "ord_456",
+  "order_id": "2c1d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
   "reason": "customer_request"
 }
 ```
@@ -433,11 +448,13 @@ Se dispara al finalizar una sesión (cierre explícito o por inactividad/timeout
 }
 ```
 
+> Las métricas de este evento son calculadas por el productor. En la capa Silver se recalculan a partir de los eventos crudos de la sesión (agrupando por `session_id`), porque hay sesiones que no emiten `session_ended` (cierre del navegador, pérdida de conexión). El valor del productor se conserva como referencia para validación.
+
 ### 6.3 `login`
 
 Se dispara cuando un usuario intenta iniciar sesión en el e-commerce. Es útil para analizar el comportamiento de acceso y detectar posibles intentos de acceso sospechosos. 
 
-`targets:` batch + streaming
+`targets:` batch, streaming
 
 | **Campo**        | **Tipo**  | **Descripción**                                                                                                            |
 | ---------------- | --------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -466,9 +483,11 @@ Se dispara cuando un usuario intenta iniciar sesión en el e-commerce. Es útil 
 | Carrito | `add_to_cart`, `remove_from_cart`, `cart_view` |
 | Checkout | `checkout_started`, `checkout_shipping`, `checkout_payment`, `checkout_abandoned` |
 | Compra y pagos | `purchase`, `payment_success`, `payment_failed`, `order_cancelled` |
-| Sesiones | `session_started`, `session_ended` |
+| Sesiones | `session_started`, `session_ended`, `login` |
 
 ## Notas
 
+- Todos los IDs de entidades de negocio son UUID compartidos con PostgreSQL (ver convención al inicio del documento).
+- Los eventos de carrito y compra incluyen `variant_id` además de `product_id`, ya que en la base de datos `cart_items` y `order_items` se registran a nivel de variante.
 - Todos los campos monetarios (`unit_price`, `total_amount`, `shipping_cost`, `amount`, `cart_value`) deben ir acompañados de su respectivo `currency` cuando apliquen, para evitar ambigüedades en agregaciones multi-moneda.
 - Ningún `payload` debe contener información sensible de medios de pago (números de tarjeta, CVV, tokens de pasarela, etc.), como ya se indica en `checkout_payment` y `payment_failed`.

@@ -297,3 +297,40 @@ Reseñas de productos.
 
 ---
 
+## 14. Consideraciones para la ingesta hacia S3
+
+### 14.1 Relación con los eventos
+
+Los eventos web y de login usan los mismos UUID de este modelo (`customer_id` = `users.user_id`, `product_id`, `variant_id`, `category_id`, `cart_id`, `order_id`), lo que permite cruzarlos directamente en la capa Silver.
+
+### 14.2 Estrategia de extracción por tabla
+
+La carga incremental se basa en `updated_at`. Las tablas que no tienen ese campo se extraen por `created_at` cuando sus registros nunca se modifican, o con carga completa cuando sí pueden cambiar.
+
+| Tabla | Estrategia | Campo de control | Motivo |
+|---|---|---|---|
+| users | Incremental | `updated_at` | Tiene fecha de actualización |
+| addresses | Completa | — | Los registros pueden editarse y no tiene `updated_at` |
+| categories | Completa | — | Tabla pequeña, sin `updated_at` |
+| products | Incremental | `updated_at` | Tiene fecha de actualización |
+| product_variants | Completa | — | El precio y el estado cambian y no tiene `updated_at` |
+| product_categories | Completa | — | Tabla de relación sin fechas |
+| product_inventory | Incremental | `updated_at` | Tiene fecha de actualización |
+| orders | Incremental | `updated_at` | El estado de la orden cambia en el tiempo |
+| order_items | Incremental (solo inserción) | `created_at` | El detalle de una orden no se modifica |
+| payments | Completa | — | El `status` cambia (approved, refunded) y no tiene `updated_at` |
+| carts | Incremental | `updated_at` | Tiene fecha de actualización |
+| cart_items | Incremental | `GREATEST(added_at, removed_at)` | El registro cambia cuando se llena `removed_at` |
+| product_reviews | Incremental (solo inserción) | `created_at` | Las reseñas no se modifican |
+
+> **Pendiente recomendado:** agregar `updated_at` a `payments`, `product_variants` y `addresses` permitiría pasarlas a carga incremental cuando el volumen crezca.
+
+### 14.3 Datos sensibles
+
+| Campo | Tratamiento |
+|---|---|
+| `users.password_hash` | **No se extrae.** Se excluye desde la consulta de origen; no llega a ninguna capa de S3 |
+| `users.email`, `users.phone` | Se almacenan en Bronze tal como vienen y se enmascaran o reemplazan por hash en Silver |
+| `users.birth_date` | Se transforma en Silver a rango de edad para análisis demográfico |
+| `addresses.address_line` | Se excluye en Silver; para análisis geográfico basta con `city`, `state` y `country` |
+| `payments.transaction_reference` | Se conserva solo para conciliación; no se expone en Gold |

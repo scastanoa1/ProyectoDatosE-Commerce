@@ -23,7 +23,7 @@ Este documento describe el esquema estándar que deben seguir todos los eventos 
   },
 
   "customer": {
-    "customer_id": "cus_12345",
+    "customer_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
     "anonymous_id": null
   },
 
@@ -44,8 +44,8 @@ Este documento describe el esquema estándar que deben seguir todos los eventos 
   },
 
   "payload": {
-    "product_id": "prod_123",
-    "category_id": "cat_10"
+    "product_id": "550e8400-e29b-41d4-a716-446655440000",
+    "category_id": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
   }
 }
 ```
@@ -95,7 +95,7 @@ Información para identificar al usuario que generó el evento.
 
 | Campo          | Descripción                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `customer_id`  | ID del usuario registrado. `null` si el usuario aún no ha iniciado sesión                                                |
+| `customer_id`  | ID del usuario registrado. Corresponde exactamente a `users.user_id` (UUID) de la base de datos PostgreSQL. `null` si el usuario aún no ha iniciado sesión |
 | `anonymous_id` | ID temporal asignado a usuarios anónimos, para poder seguir su comportamiento antes de que se registren o inicien sesión |
 
 
@@ -142,8 +142,8 @@ Contiene los datos específicos de cada evento. Es la **única sección que camb
 **Ejemplo — `product_view`:**
 ```json
 "payload": {
-  "product_id": "prod_123",
-  "category_id": "cat_10"
+  "product_id": "550e8400-e29b-41d4-a716-446655440000",
+  "category_id": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
 }
 ```
 
@@ -151,6 +151,7 @@ Contiene los datos específicos de cada evento. Es la **única sección que camb
 
 ## Consideraciones de diseño
 
+- **Identificadores compartidos con PostgreSQL:** todos los IDs de entidades de negocio que viajan en los eventos (`customer_id`, `product_id`, `variant_id`, `category_id`, `cart_id`, `order_id`) deben ser los mismos UUID que existen en la base de datos transaccional. Así los eventos se pueden cruzar directamente con las tablas de la tienda en la capa Silver sin tablas de mapeo. Los IDs propios del tracking (`event_id`, `session_id`, `anonymous_id`) no existen en Postgres y pueden conservar su formato con prefijo.
 - **Idempotencia:** usar `event_id` como clave para deduplicar eventos tanto en Flink (streaming) como en los jobs de Glue (batch).
 - **Evolución de esquema:** cualquier cambio estructural debe incrementar `event_version`, nunca reutilizar o eliminar campos existentes sin una estrategia de migración.
 - **Usuarios anónimos vs. registrados:** `customer.anonymous_id` y `customer.customer_id` son mutuamente relevantes; conviene definir una regla clara de cuál prevalece cuando ambos están presentes (por ejemplo, tras un login durante la sesión).
