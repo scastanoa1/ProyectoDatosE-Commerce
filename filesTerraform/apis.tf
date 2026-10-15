@@ -10,6 +10,7 @@ locals {
     "pubsub.googleapis.com",
     "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
+    "bigquery.googleapis.com",
   ]
 }
 
