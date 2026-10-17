@@ -1,0 +1,21 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+
+# Variables sensibles
+terraform.tfvars
+*.auto.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Credenciales
+*.json
+!*.tf.json
+
+# macOS
+.DS_Store
